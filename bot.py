@@ -393,22 +393,24 @@ async def handle_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("👋 Welcome! Use /info to see how I work.")
+
+
+async def cmd_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "💱 *Currency Converter*\n\n"
-        "Just type any amount with a currency and I'll instantly convert it\\.\n\n"
-        "*Examples:*\n"
-        "• `200 UAH`\n"
-        "• `50 USD`\n"
-        "• `0\\.1 BTC`\n"
-        "• `1000 ¥`\n"
-        "• `500 🇩🇪`\n\n"
-        "Supports 160\\+ world currencies, crypto, and flag emojis\\.\n"
-        "Results include GBP, CHF, EUR, USD, UAH, RUB, BTC and ETH\\.\n\n"
-        "*Commands:*\n"
-        "• /currencies — full list of all supported currencies\n"
-        "• /roll \[max\] — random number from 1 to 100, or set your own max\n"
-        "  `/roll` → 1\-100 · `/roll 6` → 1\-6 · unlimited rolls",
-        parse_mode=ParseMode.MARKDOWN_V2
+        "💱 Currency Converter\n\n"
+        "Just type any amount with a currency and I'll instantly convert it.\n\n"
+        "Examples:\n"
+        "• 200 UAH\n"
+        "• 50 USD\n"
+        "• 0.1 BTC\n"
+        "• 1000 ¥\n"
+        "• 500 🇩🇪\n\n"
+        "Supports 160+ world currencies, crypto, and flag emojis.\n"
+        "Results include GBP, CHF, EUR, USD, UAH, RUB, BTC and ETH.\n\n"
+        "Commands:\n"
+        "• /currencies — full list of all supported currencies.\n"
+        "• /roll [max] — random number from 1 to 100, or set your own max."
     )
 
 
@@ -509,21 +511,22 @@ async def cmd_currencies(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🇦🇱 ALL": "Albanian Lek",
         "🇲🇰 MKD": "Macedonian Denar",
         "🇧🇦 BAM": "Bosnia Mark",
-        "₿ BTC": "Bitcoin",
-        "Ξ ETH": "Ethereum",
+        "BTC": "Bitcoin",
+        "ETH": "Ethereum",
     }
 
-    lines = ["💱 *Supported Currencies*\n"]
+    lines = ["💱 Supported Currencies\n"]
     for code, name in all_currencies.items():
         lines.append(f"{code} — {name}")
 
-    # разбиваем на два сообщения чтобы не превысить лимит
+    keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🗑 Delete", callback_data="delete_msg")]])
+
     half = len(lines) // 2
     msg1 = "\n".join(lines[:half])
     msg2 = "\n".join(lines[half:])
 
-    await update.message.reply_text(msg1, parse_mode=ParseMode.MARKDOWN_V2)
-    await update.message.reply_text(msg2)
+    await update.message.reply_text(msg1)
+    await update.message.reply_text(msg2, reply_markup=keyboard)
 
 
 async def cmd_roll(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -532,13 +535,15 @@ async def cmd_roll(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.args and context.args[0].isdigit():
         max_val = int(context.args[0])
     result = random.randint(1, max_val)
-    await update.message.reply_text(f"🎲 {result} out of {max_val}")
+    keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🗑 Delete", callback_data="delete_msg")]])
+    await update.message.reply_text(f"🎲 {result} out of {max_val}", reply_markup=keyboard)
 
 
 def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", cmd_start))
+    app.add_handler(CommandHandler("info", cmd_info))
     app.add_handler(CommandHandler("currencies", cmd_currencies))
     app.add_handler(CommandHandler("roll", cmd_roll))
     app.add_handler(CallbackQueryHandler(delete_callback, pattern="^delete_msg$"))
