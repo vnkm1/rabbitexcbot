@@ -6,8 +6,8 @@ from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, Cal
 from telegram.constants import ParseMode
 
 # === настройки ===
-BOT_TOKEN = "8657110276:AAEeXFABgVxPRtuYmwSTwNB0Y_YR-Uti5oo"
-TARGET_CHAT_ID = 7474301023
+BOT_TOKEN = "ВАШ_BOT_TOKEN"
+TARGET_CHAT_ID = 123456789
 # ================
 
 logging.basicConfig(level=logging.INFO)
@@ -282,7 +282,7 @@ async def handle_currency(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await msg.reply_text("Failed to get exchange rates, try again later.")
         return
 
-    flag = CURRENCY_FLAGS.get(from_currency, "")
+    flag = "" if from_currency in ("BTC", "ETH") else CURRENCY_FLAGS.get(from_currency, "")
     sym = CURRENCY_SYMBOLS.get(from_currency, "")
 
     # один сплошной blockquote
@@ -403,15 +403,144 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• `1000 ¥`\n"
         "• `500 🇩🇪`\n\n"
         "Supports 160\\+ world currencies, crypto, and flag emojis\\.\n"
-        "Results include GBP, CHF, EUR, USD, UAH, RUB, BTC and ETH\\.",
+        "Results include GBP, CHF, EUR, USD, UAH, RUB, BTC and ETH\\.\n\n"
+        "*Commands:*\n"
+        "• /currencies — full list of all supported currencies\n"
+        "• /roll \[max\] — random number from 1 to 100, or set your own max\n"
+        "  `/roll` → 1\-100 · `/roll 6` → 1\-6 · unlimited rolls",
         parse_mode=ParseMode.MARKDOWN_V2
     )
+
+
+async def cmd_currencies(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # все валюты из алиасов + крипта
+    all_currencies = {
+        "🇬🇧 GBP": "British Pound",
+        "🇨🇭 CHF": "Swiss Franc",
+        "🇪🇺 EUR": "Euro",
+        "🇺🇸 USD": "US Dollar",
+        "🇺🇦 UAH": "Ukrainian Hryvnia",
+        "🇷🇺 RUB": "Russian Ruble",
+        "🇯🇵 JPY": "Japanese Yen",
+        "🇨🇳 CNY": "Chinese Yuan",
+        "🇰🇷 KRW": "South Korean Won",
+        "🇭🇰 HKD": "Hong Kong Dollar",
+        "🇸🇬 SGD": "Singapore Dollar",
+        "🇦🇺 AUD": "Australian Dollar",
+        "🇨🇦 CAD": "Canadian Dollar",
+        "🇳🇿 NZD": "New Zealand Dollar",
+        "🇸🇪 SEK": "Swedish Krona",
+        "🇳🇴 NOK": "Norwegian Krone",
+        "🇩🇰 DKK": "Danish Krone",
+        "🇵🇱 PLN": "Polish Zloty",
+        "🇨🇿 CZK": "Czech Koruna",
+        "🇭🇺 HUF": "Hungarian Forint",
+        "🇷🇴 RON": "Romanian Leu",
+        "🇧🇬 BGN": "Bulgarian Lev",
+        "🇷🇸 RSD": "Serbian Dinar",
+        "🇭🇷 HRK": "Croatian Kuna",
+        "🇹🇷 TRY": "Turkish Lira",
+        "🇮🇱 ILS": "Israeli Shekel",
+        "🇸🇦 SAR": "Saudi Riyal",
+        "🇦🇪 AED": "UAE Dirham",
+        "🇶🇦 QAR": "Qatari Riyal",
+        "🇰🇼 KWD": "Kuwaiti Dinar",
+        "🇧🇭 BHD": "Bahraini Dinar",
+        "🇴🇲 OMR": "Omani Rial",
+        "🇯🇴 JOD": "Jordanian Dinar",
+        "🇮🇷 IRR": "Iranian Rial",
+        "🇮🇶 IQD": "Iraqi Dinar",
+        "🇮🇳 INR": "Indian Rupee",
+        "🇵🇰 PKR": "Pakistani Rupee",
+        "🇧🇩 BDT": "Bangladeshi Taka",
+        "🇱🇰 LKR": "Sri Lankan Rupee",
+        "🇳🇵 NPR": "Nepalese Rupee",
+        "🇲🇾 MYR": "Malaysian Ringgit",
+        "🇮🇩 IDR": "Indonesian Rupiah",
+        "🇹🇭 THB": "Thai Baht",
+        "🇻🇳 VND": "Vietnamese Dong",
+        "🇵🇭 PHP": "Philippine Peso",
+        "🇲🇲 MMK": "Myanmar Kyat",
+        "🇰🇭 KHR": "Cambodian Riel",
+        "🇱🇦 LAK": "Lao Kip",
+        "🇧🇳 BND": "Brunei Dollar",
+        "🇰🇿 KZT": "Kazakhstani Tenge",
+        "🇺🇿 UZS": "Uzbekistani Som",
+        "🇦🇲 AMD": "Armenian Dram",
+        "🇬🇪 GEL": "Georgian Lari",
+        "🇦🇿 AZN": "Azerbaijani Manat",
+        "🇧🇾 BYN": "Belarusian Ruble",
+        "🇲🇩 MDL": "Moldovan Leu",
+        "🇰🇬 KGS": "Kyrgyzstani Som",
+        "🇹🇯 TJS": "Tajikistani Somoni",
+        "🇹🇲 TMT": "Turkmenistani Manat",
+        "🇲🇳 MNT": "Mongolian Tugrik",
+        "🇿🇦 ZAR": "South African Rand",
+        "🇳🇬 NGN": "Nigerian Naira",
+        "🇰🇪 KES": "Kenyan Shilling",
+        "🇬🇭 GHS": "Ghanaian Cedi",
+        "🇹🇿 TZS": "Tanzanian Shilling",
+        "🇺🇬 UGX": "Ugandan Shilling",
+        "🇪🇹 ETB": "Ethiopian Birr",
+        "🇲🇦 MAD": "Moroccan Dirham",
+        "🇩🇿 DZD": "Algerian Dinar",
+        "🇹🇳 TND": "Tunisian Dinar",
+        "🇱🇾 LYD": "Libyan Dinar",
+        "🇪🇬 EGP": "Egyptian Pound",
+        "🇧🇷 BRL": "Brazilian Real",
+        "🇲🇽 MXN": "Mexican Peso",
+        "🇦🇷 ARS": "Argentine Peso",
+        "🇨🇱 CLP": "Chilean Peso",
+        "🇨🇴 COP": "Colombian Peso",
+        "🇵🇪 PEN": "Peruvian Sol",
+        "🇺🇾 UYU": "Uruguayan Peso",
+        "🇧🇴 BOB": "Bolivian Boliviano",
+        "🇵🇾 PYG": "Paraguayan Guarani",
+        "🇻🇪 VES": "Venezuelan Bolívar",
+        "🇨🇺 CUP": "Cuban Peso",
+        "🇩🇴 DOP": "Dominican Peso",
+        "🇬🇹 GTQ": "Guatemalan Quetzal",
+        "🇭🇳 HNL": "Honduran Lempira",
+        "🇨🇷 CRC": "Costa Rican Colón",
+        "🇵🇦 PAB": "Panamanian Balboa",
+        "🇯🇲 JMD": "Jamaican Dollar",
+        "🇹🇹 TTD": "Trinidad Dollar",
+        "🇮🇸 ISK": "Icelandic Króna",
+        "🇦🇱 ALL": "Albanian Lek",
+        "🇲🇰 MKD": "Macedonian Denar",
+        "🇧🇦 BAM": "Bosnia Mark",
+        "₿ BTC": "Bitcoin",
+        "Ξ ETH": "Ethereum",
+    }
+
+    lines = ["💱 *Supported Currencies*\n"]
+    for code, name in all_currencies.items():
+        lines.append(f"{code} — {name}")
+
+    # разбиваем на два сообщения чтобы не превысить лимит
+    half = len(lines) // 2
+    msg1 = "\n".join(lines[:half])
+    msg2 = "\n".join(lines[half:])
+
+    await update.message.reply_text(msg1, parse_mode=ParseMode.MARKDOWN_V2)
+    await update.message.reply_text(msg2)
+
+
+async def cmd_roll(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    import random
+    max_val = 100
+    if context.args and context.args[0].isdigit():
+        max_val = int(context.args[0])
+    result = random.randint(1, max_val)
+    await update.message.reply_text(f"🎲 {result} out of {max_val}")
 
 
 def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", cmd_start))
+    app.add_handler(CommandHandler("currencies", cmd_currencies))
+    app.add_handler(CommandHandler("roll", cmd_roll))
     app.add_handler(CallbackQueryHandler(delete_callback, pattern="^delete_msg$"))
     app.add_handler(MessageHandler(filters.REPLY & filters.TEXT, handle_reply))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_currency))
