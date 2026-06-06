@@ -6,8 +6,8 @@ from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, Cal
 from telegram.constants import ParseMode
 
 # === настройки ===
-BOT_TOKEN = "ВАШ_BOT_TOKEN"
-TARGET_CHAT_ID = 123456789
+BOT_TOKEN = "8657110276:AAEeXFABgVxPRtuYmwSTwNB0Y_YR-Uti5oo"
+TARGET_CHAT_ID = 7474301023
 # ================
 
 logging.basicConfig(level=logging.INFO)
