@@ -393,7 +393,7 @@ async def handle_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("👋 Welcome! Use /info to see how I work.")
+    await update.message.reply_text("👋 *Welcome\\! Use /info to see how this bot works\\.*", parse_mode=ParseMode.MARKDOWN_V2)
 
 
 async def cmd_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
